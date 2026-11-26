@@ -85,8 +85,9 @@ curl -X POST http://localhost/ask -H "Content-Type: application/json" -d '{"ques
 
 ## Part 3: Cloud Deployment
 
-### Exercise 3.1 & 3.2: Railway Deployment & So sánh Config
-- **Public URL Agent Part 6:** `https://k5-day14-agent.up.railway.app`
+### Exercise 3.1 & 3.2: Render Deployment & So sánh Config
+- **Public URL Agent Part 6:** `https://k5-l3b-day14-truongvanphong-2a202604091.onrender.com`
+- **Screenshots:** [dashboard.png](screenshots/dashboard.png), [running.png](screenshots/running.png), [test.png](screenshots/test.png)
 - **So sánh `railway.toml` vs `render.yaml`:**
   - `railway.toml`: Định dạng TOML đơn giản, tập trung vào cấu hình builder (`builder = "DOCKERFILE"`), định nghĩa đường dẫn kiểm tra sức khỏe (`healthcheckPath = "/health"`), và thiết lập chính sách khởi động lại (`restartPolicyType = "ON_FAILURE"`). Railway tự động map biến `PORT` nội bộ và hỗ trợ giao diện quản lý biến môi trường linh hoạt.
   - `render.yaml`: Định dạng YAML theo chuẩn Infrastructure-as-Code (Blueprint), cho phép khai báo toàn diện cả cụm ứng dụng (gồm web service, worker, redis service, database) trong một file duy nhất. Hỗ trợ thuộc tính bảo mật cao như `generateValue: true` (tự tạo secret ngẫu nhiên) hoặc `sync: false` (báo hiệu biến nhạy cảm như `REDIS_URL` không lưu trực tiếp trong code repo mà cấu hình qua Render dashboard).
