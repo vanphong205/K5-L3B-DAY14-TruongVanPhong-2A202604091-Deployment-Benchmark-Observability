@@ -2,6 +2,7 @@
 Rate limiting (tiêu chí 7).
 """
 import time
+import uuid
 from fastapi import HTTPException
 from app.config import settings
 from app.redis_client import r
@@ -30,7 +31,7 @@ def check_rate_limit(key: str) -> None:
             )
 
         # 3. Add current request timestamp
-        r.zadd(redis_key, {str(now): now})
+        r.zadd(redis_key, {f"{now}:{uuid.uuid4().hex}": now})
         r.expire(redis_key, 60)
     except HTTPException:
         raise

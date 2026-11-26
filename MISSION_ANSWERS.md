@@ -93,10 +93,10 @@ curl -X POST http://localhost/ask -H "Content-Type: application/json" -d '{"ques
 
 ### Exercise 3.3: Phân tích CI/CD Pipeline Cloud Run
 Dựa trên `03-cloud-deployment/production-cloud-run/cloudbuild.yaml` và `service.yaml`:
-1. **Trigger:** Khi code được push vào branch `main`, Google Cloud Build tự động kích hoạt pipeline.
-2. **Step 1 - Build & Cache:** Cloud Build sử dụng Docker builder pull cache image cũ về và build image mới từ `Dockerfile`, gán tag commit SHA và tag `latest`.
-3. **Step 2 - Push Image:** Push image đã đóng gói lên Google Artifact Registry / Container Registry (`gcr.io/$PROJECT_ID/agent:$COMMIT_SHA`).
-4. **Step 3 - Deploy Cloud Run:** Thực thi lệnh `gcloud run services replace service.yaml`, deploy revision mới lên Cloud Run serverless container, tự động cấu hình autoscaling (từ 0 lên N instances), giới hạn CPU/RAM, inject environment variables và kết nối VPC connector.
+1. **Step 1 (`test`):** Chạy `pytest tests/ -v --tb=short` trong container `python:3.11-slim` trước khi đóng gói.
+2. **Step 2 (`build`):** Dùng `docker build` với `--cache-from=gcr.io/$PROJECT_ID/ai-agent:latest` để tận dụng layer cache, gắn đồng thời 2 tag `$COMMIT_SHA` và `latest`.
+3. **Step 3 (`push`):** Thực thi `docker push --all-tags gcr.io/$PROJECT_ID/ai-agent` để đẩy image lên Container Registry (`gcr.io`).
+4. **Step 4 (`deploy`):** Chạy `gcloud run deploy ai-agent` vào region `asia-southeast1` với `--min-instances=1` (tránh cold start), `--max-instances=10`, giới hạn `512Mi` RAM / `1` CPU, `timeout=60s`, và inject secret từ Secret Manager (`--set-secrets`). File `service.yaml` là bản Knative IaC tương ứng khai báo `containerConcurrency: 80`, `livenessProbe` (`/health`), `startupProbe` (`/ready`) và lấy `OPENAI_API_KEY`, `AGENT_API_KEY` qua `secretKeyRef`.
 
 ---
 
@@ -183,7 +183,7 @@ Dưới đây là output chạy kiểm tra tự động 12 tiêu chí của `che
      ✅ Base image gọn (slim / alpine / distroless) — stage cuối dùng python:3.11-slim
      ✅ Chạy bằng user non-root
      ✅ Có HEALTHCHECK
-     ✅ Docker: build image thành công — 16s
+     ✅ Docker: build image thành công — 20s
      ✅ Docker: image < 500 MB — 56 MB
      ✅ Docker: container chạy được, GET /health → 200
 
@@ -233,8 +233,8 @@ Dưới đây là output chạy kiểm tra tự động 12 tiêu chí của `che
 
 ✅ 11. Graceful shutdown
      ✅ Code xử lý SIGTERM / lifespan shutdown
-     ✅ Khi chạy: SIGTERM lúc đang có request → request vẫn 200, process tự thoát
-     ✅ Docker: `docker stop` tắt êm (exit code 0, < 10s) — exit code 0, 0.8s
+     ✅ Khi chạy: SIGTERM lúc đang có request → request vẫn 200, process tự thoát — exit code 0
+     ✅ Docker: `docker stop` tắt êm (exit code 0, < 10s) — exit code 0, 0.9s
 
 ✅ 12. Public URL ready (Railway / Render config)
      ✅ Có railway.toml hoặc render.yaml (không chỉ toàn comment)
@@ -258,8 +258,8 @@ Dưới đây là output chạy kiểm tra tự động 12 tiêu chí của `che
      ✅ Graceful shutdown
      ✅ Public URL ready (Railway / Render config)
 ----------------------------------------------------------------
-  Result: 12/12 tiêu chí đạt · 42/42 checks passed
-  🎉 ĐẠT CHUẨN PRODUCTION READY (PASS 12/12)!
+  Result: 12/12 tiêu chí đạt · 43/43 checks passed
+  🎉 PASS 12/12 — PRODUCTION READY! Deploy nào!
 ================================================================
 ```
 

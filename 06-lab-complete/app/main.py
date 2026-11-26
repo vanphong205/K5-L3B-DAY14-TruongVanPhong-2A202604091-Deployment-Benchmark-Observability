@@ -4,11 +4,11 @@ Production AI Agent — Part 6 Final Project
 import json
 import logging
 import time
-import signal
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -51,6 +51,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Production AI Agent", lifespan=lifespan)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Trả JSON 500 gọn, tránh lộ stack trace ra client."""
+    logger.error(
+        "Unhandled exception",
+        extra={"props": {"event": "error", "error_type": type(exc).__name__}},
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 class AskRequest(BaseModel):

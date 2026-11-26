@@ -5,7 +5,12 @@ import redis
 from app.config import settings
 
 # Lazy connection - don't connect immediately on import
-r = redis.from_url(settings.redis_url, decode_responses=True)
+r = redis.from_url(
+    settings.redis_url,
+    decode_responses=True,
+    socket_connect_timeout=2,
+    socket_timeout=2,
+)
 
 
 def redis_healthy() -> bool:
